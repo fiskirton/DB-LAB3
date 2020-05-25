@@ -5,7 +5,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 
 public class CustomAlert {
-	private static final String STYLESHEET = CustomAlert.class.getResource("alert.css").toExternalForm();
+	private static final String STYLESHEET = CustomAlert.class.getResource("css/alert.css").toExternalForm();
 	
 	public static class AlertBuilder {
 		private AlertType alertType;

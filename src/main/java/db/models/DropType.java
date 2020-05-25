@@ -6,8 +6,8 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 public class DropType extends BaseModel {
-	private IntegerProperty dropTypeId;
-	private StringProperty dropType;
+	private final IntegerProperty dropTypeId;
+	private final StringProperty dropType;
 	
 	protected DropType(String[] data) {
 		this.dropTypeId = new SimpleIntegerProperty(Integer.parseInt(data[0]));

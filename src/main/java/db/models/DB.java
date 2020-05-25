@@ -1,6 +1,6 @@
 package db.models;
 
-import gui.views.MainStage;
+import extra.SQLFuncs;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
@@ -71,18 +71,13 @@ public enum DB {
 		closeConnection(main_connection);
 	}
 	
-	public boolean initDB() throws SQLException {
+	public void initDB() throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
 		
-		CallableStatement initDBStatement = main_connection.prepareCall("{? = call init_db}");
-		initDBStatement.registerOutParameter(1, Types.BOOLEAN);
+		CallableStatement initDBStatement = main_connection.prepareCall("{call init_db}");
 		initDBStatement.executeUpdate();
 		
-		boolean response = initDBStatement.getBoolean(1);
-		
 		closeConnection(main_connection);
-		
-		return response;
 	}
 	
 	public <T extends BaseModel> List<T> getData(Class<T> tClass, String funcStatement) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {

@@ -57,67 +57,59 @@ $body$
 $body$ language plpgsql;
 
 create or replace function init_db ()
-returns bool as
+returns void as
 $body$
     begin
-        if is_exists()
-        then
-            create table if not exists locations (
-                location_id serial primary key,
-                location_title text
-            );
+        create table if not exists locations (
+            location_id serial primary key,
+            location_title text
+        );
 
-            create unique index if not exists location_idx on locations(lower(location_title));
+        create unique index if not exists location_idx on locations(lower(location_title));
 
-            create table if not exists drop_types (
-                drop_type_id serial primary key,
-                drop_type text unique
-            );
+        create table if not exists drop_types (
+            drop_type_id serial primary key,
+            drop_type text unique
+        );
 
-            create unique index if not exists drop_type_idx on drop_types(lower(drop_type));
+        create unique index if not exists drop_type_idx on drop_types(lower(drop_type));
 
-            create table if not exists categories (
-                category_id serial primary key,
-                category_title text unique
-            );
+        create table if not exists categories (
+            category_id serial primary key,
+            category_title text unique
+        );
 
-            create unique index if not exists category_idx on categories(lower(category_title));
+        create unique index if not exists category_idx on categories(lower(category_title));
 
-            create table if not exists items (
-                item_id text primary key,
-                item_title text not null,
-                location int not null,
-                drop_type int not null,
-                category int not null,
-                base_price int not null,
-                ng int not null check ( ng <= 5 ) default 1,
-                ng_price int,
-                foreign key (location) references locations (location_id) on delete cascade on update cascade,
-                foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,
-                foreign key (category) references categories(category_id) on delete cascade on update cascade
-            );
-            create index if not exists item_idx on items (lower(item_title));
+        create table if not exists items (
+            item_id text primary key,
+            item_title text not null,
+            location int not null,
+            drop_type int not null,
+            category int not null,
+            base_price int not null,
+            ng int not null check ( ng <= 5 ) default 1,
+            ng_price int,
+            foreign key (location) references locations (location_id) on delete cascade on update cascade,
+            foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,
+            foreign key (category) references categories(category_id) on delete cascade on update cascade
+        );
+        create index if not exists item_idx on items (lower(item_title));
 
-            create or replace function set_ng_price()
-            returns trigger as
-            $$
-                begin
-                    new.ng_price = new.base_price * new.ng;
-                    return new;
-                end;
-            $$ language plpgsql;
+        create or replace function set_ng_price()
+        returns trigger as
+        $$
+            begin
+                new.ng_price = new.base_price * new.ng;
+                return new;
+            end;
+        $$ language plpgsql;
 
-            drop trigger if exists ng_price_trigger on items;
+        drop trigger if exists ng_price_trigger on items;
 
-            create trigger ng_price_trigger
-            before insert or update on items
-            for row execute procedure set_ng_price();
-
-            return true;
-        else
-            raise notice 'There is no database for initialization';
-            return false;
-        end if;
+        create trigger ng_price_trigger
+        before insert or update on items
+        for row execute procedure set_ng_price();
     end;
 $body$ language plpgsql;
 
@@ -441,35 +433,3 @@ $$
         return true;
     end;
 $$ language plpgsql;
-
-select create_db();
-select * from init_db();
-
-select drop_db();
-
-select add_item(241, 'agger', 'LondO', 'loot', 'armor', 100, 4);
-select add_item(242, 'agger', 'LondO', 'loot', 'armor', 100, 4);
-
-
-select * from get_items();
-select * from get_locations();
-
-select * from find_items('agGer');
-
-select edit_item(100, 241, 'dagger', 'blighttown', 'craft', 'weapon', '50', 1);
-
-select truncate_all();
-
-select delete_item(100);
-
-explain select delete_location('blighttown');
-
-select delete_category('weapon');
-
-select delete_drop_type('loot');
-
-select delete_items('agger');
-
-explain select * from locations where lower(location_title) = 'londo';
-
-select to_hex(242)

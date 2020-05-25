@@ -17,7 +17,7 @@ public class NewItemDialog {
 	private final NewRecordController controller;
 	
 	private NewItemDialog(Stage parentStage) throws IOException {
-		FXMLLoader loader = new FXMLLoader(MainStage.class.getResource("new-record-dialog.fxml"));
+		FXMLLoader loader = new FXMLLoader(MainStage.class.getResource("scenes/new-record-dialog.fxml"));
 		Parent root = loader.load();
 		newItemDialog = new Stage();
 		newItemDialog.setOnCloseRequest(event -> {

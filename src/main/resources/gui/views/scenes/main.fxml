@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 
 <?import gui.custom.CharacterTextField?>
-<AnchorPane prefHeight="900.0" prefWidth="1600.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.MainController">
+<AnchorPane prefHeight="900.0" prefWidth="1600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.MainController">
    <children>
       <HBox prefHeight="50.0" prefWidth="1400.0" styleClass="hbox">
          <children>

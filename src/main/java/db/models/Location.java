@@ -7,8 +7,8 @@ import javafx.beans.property.StringProperty;
 
 public class Location extends BaseModel{
 	
-	private IntegerProperty locationId;
-	private StringProperty locationTitle;
+	private final IntegerProperty locationId;
+	private final StringProperty locationTitle;
 	
 	protected Location(String[] data) {
 		this.locationId = new SimpleIntegerProperty(Integer.parseInt(data[0]));

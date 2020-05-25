@@ -7,8 +7,8 @@ import javafx.beans.property.StringProperty;
 
 public class Category extends BaseModel {
 	
-	private IntegerProperty categoryId;
-	private StringProperty categoryTitle;
+	private final IntegerProperty categoryId;
+	private final StringProperty categoryTitle;
 	
 	protected Category (String[] data) {
 		this.categoryId = new SimpleIntegerProperty(Integer.parseInt(data[0]));

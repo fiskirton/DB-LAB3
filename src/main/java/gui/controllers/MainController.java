@@ -52,9 +52,6 @@ public class MainController implements Initializable {
 	private Class<? extends BaseModel> currentTableClass;
 	
 	@FXML
-	private VBox funcPanel;
-	
-	@FXML
 	private AnchorPane tablePane;
 	
 	@FXML
@@ -65,9 +62,6 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private Button commitButton;
-	
-	@FXML
-	private Button addRecordButton;
 	
 	@FXML
 	private Button removeAllButton;
@@ -176,7 +170,6 @@ public class MainController implements Initializable {
 	
 	public void setItems() throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 		List<Item> itemsNew = db.getItems();
-		ObservableList<Item> l = itemsTable.getItems();
 		if (items == null) {
 			items = FXCollections.observableList(itemsNew);
 		} else {
@@ -371,7 +364,7 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void deleteSelectedRow() throws SQLException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
-		if(!showConfirmationAlert("Confirm deletion of the selected row")){
+		if(showConfirmationAlert("Confirm deletion of the selected row")){
 			return;
 		}
 		
@@ -411,7 +404,7 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void deleteAllRows() throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
-		if(!showConfirmationAlert("Confirm the deletion of all rows with the selected title")){
+		if(showConfirmationAlert("Confirm the deletion of all rows with the selected title")){
 			return;
 		}
 		Item selectedItem = (Item) currentTable.getSelectionModel().getSelectedItem();
@@ -524,7 +517,7 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void truncateCurrentTable() throws SQLException {
-		if(!showConfirmationAlert("Confirm truncating the current table")){
+		if(showConfirmationAlert("Confirm truncating the current table")){
 			return;
 		}
 		
@@ -533,28 +526,28 @@ public class MainController implements Initializable {
 				if (db.truncateItems()) {
 					items.clear();
 					itemsChanged.clear();
-				};
+				}
 			}
 			
 			if (currentTableClass.isAssignableFrom(Location.class)) {
 				if (db.truncateLocations()) {
 					locations.clear();
 					locationsChanged.clear();
-				};
+				}
 			}
 			
 			if (currentTableClass.isAssignableFrom(DropType.class)) {
 				if (db.truncateDropTypes()) {
 					dropTypes.clear();
 					dropTypesChanged.clear();
-				};
+				}
 			}
 			
 			if (currentTableClass.isAssignableFrom(Category.class)) {
 				if (db.truncateDropTypes()) {
 					categories.clear();
 					categoriesChanged.clear();
-				};
+				}
 			}
 			truncateButton.setDisable(true);
 		}
@@ -562,7 +555,7 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void truncateAllTables() throws SQLException {
-		if(!showConfirmationAlert("Confirm truncating all tables")){
+		if(showConfirmationAlert("Confirm truncating all tables")){
 			return;
 		}
 		
@@ -668,6 +661,6 @@ public class MainController implements Initializable {
 				.build();
 		Optional<ButtonType> response = alert.showAndWait();
 		
-		return response.get() == ButtonType.OK;
+		return response.get() != ButtonType.OK;
 	}
 }

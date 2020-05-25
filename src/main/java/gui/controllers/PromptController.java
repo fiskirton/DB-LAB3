@@ -36,7 +36,6 @@ public class PromptController implements Initializable {
 	public void createDB() throws SQLException {
 		boolean response = db.createDB();
 		if (response) {
-			db.storeMainFunctions();
 			showInfoAlert("Database was created successfully");
 		} else {
 			showErrorAlert("Database already exists!");
@@ -47,6 +46,7 @@ public class PromptController implements Initializable {
 	public void openDB() throws SQLException, IOException {
 		boolean response = db.isExists();
 		if (response) {
+			db.storeMainFunctions();
 			db.initDB();
 			MainStage mainStage = MainStage.createMainStage();
 			promptStage.getStage().hide();

@@ -15,7 +15,7 @@ public class MainStage {
 	private Stage mainStage;
 	
 	private MainStage() throws IOException {
-		FXMLLoader loader = new FXMLLoader(MainStage.class.getResource("main.fxml"));
+		FXMLLoader loader = new FXMLLoader(MainStage.class.getResource("scenes/main.fxml"));
 		Parent root = loader.load();
 		mainStage = new Stage();
 		mainStage.setOnCloseRequest(event -> {

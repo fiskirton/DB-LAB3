@@ -15,7 +15,7 @@ public class PromptStage {
 	private PromptController controller;
 	
 	private PromptStage () throws IOException {
-		FXMLLoader loader = new FXMLLoader(PromptStage.class.getResource("prompt.fxml"));
+		FXMLLoader loader = new FXMLLoader(PromptStage.class.getResource("scenes/prompt.fxml"));
 		Parent root = loader.load();
 		promptStage = new Stage();
 		promptStage.setResizable(false);

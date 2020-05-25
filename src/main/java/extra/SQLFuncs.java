@@ -1,4 +1,4 @@
-package db.models;
+package extra;
 
 public class SQLFuncs {
 	public static final String HOST_FUNCS =
@@ -62,71 +62,61 @@ public class SQLFuncs {
 	
 	public static final String MAIN_FUNCS =
 			"create or replace function init_db ()\n" +
-			"returns bool as\n" +
+			"returns void as\n" +
 			"$body$\n" +
-			"    declare\n" +
-			"        db_name text := 'ds1_armory';\n" +
 			"    begin\n" +
-			"        if exists (select true from pg_database where datname=db_name)\n" +
-			"        then\n" +
-			"            create table if not exists locations (\n" +
-			"                location_id serial primary key,\n" +
-			"                location_title text\n" +
-			"            );\n" +
+			"        create table if not exists locations (\n" +
+			"            location_id serial primary key,\n" +
+			"            location_title text\n" +
+			"        );\n" +
 			"\n" +
-			"            create unique index if not exists location_idx on locations(lower(location_title));\n" +
+			"        create unique index if not exists location_idx on locations(lower(location_title));\n" +
 			"\n" +
-			"            create table if not exists drop_types (\n" +
-			"                drop_type_id serial primary key,\n" +
-			"                drop_type text unique\n" +
-			"            );\n" +
+			"        create table if not exists drop_types (\n" +
+			"            drop_type_id serial primary key,\n" +
+			"            drop_type text unique\n" +
+			"        );\n" +
 			"\n" +
-			"            create unique index if not exists drop_type_idx on drop_types(lower(drop_type));\n" +
+			"        create unique index if not exists drop_type_idx on drop_types(lower(drop_type));\n" +
 			"\n" +
-			"            create table if not exists categories (\n" +
-			"                category_id serial primary key,\n" +
-			"                category_title text unique\n" +
-			"            );\n" +
+			"        create table if not exists categories (\n" +
+			"            category_id serial primary key,\n" +
+			"            category_title text unique\n" +
+			"        );\n" +
 			"\n" +
-			"            create unique index if not exists category_idx on categories(lower(category_title));\n" +
+			"        create unique index if not exists category_idx on categories(lower(category_title));\n" +
 			"\n" +
-			"            create table if not exists items (\n" +
-			"                item_id text primary key,\n" +
-			"                item_title text not null,\n" +
-			"                location int not null,\n" +
-			"                drop_type int not null,\n" +
-			"                category int not null,\n" +
-			"                base_price int not null,\n" +
-			"                ng int not null check ( ng <= 5 ) default 1,\n" +
-			"                ng_price int,\n" +
-			"                foreign key (location) references locations (location_id) on delete cascade on update cascade,\n" +
-			"                foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,\n" +
-			"                foreign key (category) references categories(category_id) on delete cascade on update cascade\n" +
-			"            );\n" +
-			"            create index if not exists item_idx on items (lower(item_title));\n" +
+			"        create table if not exists items (\n" +
+			"            item_id text primary key,\n" +
+			"            item_title text not null,\n" +
+			"            location int not null,\n" +
+			"            drop_type int not null,\n" +
+			"            category int not null,\n" +
+			"            base_price int not null,\n" +
+			"            ng int not null check ( ng <= 5 ) default 1,\n" +
+			"            ng_price int,\n" +
+			"            foreign key (location) references locations (location_id) on delete cascade on update cascade,\n" +
+			"            foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,\n" +
+			"            foreign key (category) references categories(category_id) on delete cascade on update cascade\n" +
+			"        );\n" +
+			"        create index if not exists item_idx on items (lower(item_title));\n" +
 			"\n" +
-			"            create or replace function set_ng_price()\n" +
-			"            returns trigger as\n" +
-			"            $$\n" +
-			"                begin\n" +
-			"                    new.ng_price = new.base_price * new.ng;\n" +
-			"                    return new;\n" +
-			"                end;\n" +
-			"            $$ language plpgsql;\n" +
+			"        create or replace function set_ng_price()\n" +
+			"        returns trigger as\n" +
+			"        $$\n" +
+			"            begin\n" +
+			"                new.ng_price = new.base_price * new.ng;\n" +
+			"                return new;\n" +
+			"            end;\n" +
+			"        $$ language plpgsql;\n" +
 			"\n" +
-			"            drop trigger if exists ng_price_trigger on items;\n" +
+			"        drop trigger if exists ng_price_trigger on items;\n" +
 			"\n" +
-			"            create trigger ng_price_trigger\n" +
-			"            before insert or update on items\n" +
-			"            for row execute procedure set_ng_price();\n" +
-			"\n" +
-			"            return true;\n" +
-			"        else\n" +
-			"            raise notice 'There is no database for initialization';\n" +
-			"            return false;\n" +
-			"        end if;\n" +
+			"        create trigger ng_price_trigger\n" +
+			"        before insert or update on items\n" +
+			"        for row execute procedure set_ng_price();\n" +
 			"    end;\n" +
-			"$body$ language plpgsql;\n" +
+			"$body$ language plpgsql;" +
 			"\n" +
 			"create or replace function get_items ()\n" +
 			"returns table (\n" +
@@ -135,12 +125,13 @@ public class SQLFuncs {
 			"    location text,\n" +
 			"    \"drop type\" text,\n" +
 			"    category text,\n" +
+			"    ng int,\n" +
 			"    price int\n" +
 			") as\n" +
 			"$body$\n" +
 			"    begin\n" +
 			"        return query\n" +
-			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng_price\n" +
+			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng, i.ng_price\n" +
 			"            from items i\n" +
 			"            inner join locations l on i.location = l.location_id\n" +
 			"            inner join drop_types dt on i.drop_type = dt.drop_type_id\n" +
@@ -176,9 +167,12 @@ public class SQLFuncs {
 			"        select drop_type_id into dt_id from drop_types where drop_type = initcap(dt);\n" +
 			"        select category_id into c_id from categories where category_title = initcap(categ);\n" +
 			"\n" +
-			"        insert into items (item_id, item_title, location, drop_type, category, base_price, ng) values (to_hex(id), initcap(title), l_id, dt_id, c_id, bp, ng_val);\n" +
-			"\n" +
+			"        insert into items (item_id, item_title, location, drop_type, category, base_price, ng)\n" +
+			"        values (to_hex(id), initcap(title), l_id, dt_id, c_id, bp, ng_val);\n" +
 			"        return true;\n" +
+			"        exception\n" +
+			"         when unique_violation then\n" +
+			"             return false;\n" +
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
 			"\n" +
@@ -233,7 +227,7 @@ public class SQLFuncs {
 			"            set location_title = initcap(new_title)\n" +
 			"        where location_id = id;\n" +
 			"        return true;\n" +
-			"        \n" +
+			"\n" +
 			"        exception\n" +
 			"            when unique_violation then\n" +
 			"                return false;\n" +
@@ -248,7 +242,7 @@ public class SQLFuncs {
 			"            set drop_type = initcap(new_title)\n" +
 			"        where drop_type_id = id;\n" +
 			"        return true;\n" +
-			"        \n" +
+			"\n" +
 			"        exception\n" +
 			"            when unique_violation then\n" +
 			"                return false;\n" +
@@ -263,12 +257,12 @@ public class SQLFuncs {
 			"            set category_title = initcap(new_title)\n" +
 			"        where category_id = id;\n" +
 			"        return true;\n" +
-			"        \n" +
+			"\n" +
 			"        exception\n" +
 			"            when unique_violation then\n" +
 			"                return false;\n" +
 			"    end;\n" +
-			"$$ language plpgsql;" +
+			"$$ language plpgsql;\n" +
 			"\n" +
 			"create or replace function get_locations()\n" +
 			"returns table (\n" +
@@ -371,7 +365,29 @@ public class SQLFuncs {
 			"                  (dt_param = '' or lower(dt.drop_type) = lower(dt_param)) and\n" +
 			"                  (categ_param = '' or lower(c.category_title) = lower(categ_param));\n" +
 			"    end;\n" +
-			"$$ language plpgsql;" +
+			"$$ language plpgsql;\n" +
+			"\n" +
+			"create or replace function get_item_by_id(itId int)\n" +
+			"returns table (\n" +
+			"    id text,\n" +
+			"    title text,\n" +
+			"    location text,\n" +
+			"    \"drop type\" text,\n" +
+			"    category text,\n" +
+			"    ng int,\n" +
+			"    price int\n" +
+			") as\n" +
+			"$$\n" +
+			"    begin\n" +
+			"        return query\n" +
+			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng, i.ng_price\n" +
+			"            from items i\n" +
+			"            inner join locations l on i.location = l.location_id\n" +
+			"            inner join drop_types dt on i.drop_type = dt.drop_type_id\n" +
+			"            inner join categories c on i.category = c.category_id\n" +
+			"            where i.item_id = to_hex(itId);\n" +
+			"    end;\n" +
+			"$$ language plpgsql;\n" +
 			"\n" +
 			"create or replace function delete_item(id int)\n" +
 			"returns bool as\n" +
