@@ -1,0 +1,53 @@
+.dialog-pane {
+    -fx-background-color: #2B2B2B;
+}
+
+.dialog-pane * {
+    -fx-text-fill: #d8d8d8;
+}
+
+.dialog-pane .label {
+    -fx-font-size: 12pt;
+}
+
+.dialog-pane #icon {
+    -fx-font-size: 26pt;
+}
+
+.dialog-pane .button {
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: inherit;
+    -fx-font-size: 12pt;
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: #2F65CA;
+}
+
+.button:pressed, .button:default:hover:pressed {
+    -fx-background-color: #3B75E1;
+}
+
+.custom-confirmation-graphic,
+.custom-error-graphic,
+.custom-information-graphic,
+.custom-warning-graphic {
+    -fx-font-family: 'FontAwesome';
+}
+
+.custom-confirmation-graphic {
+    -fx-text-fill: royalblue;
+}
+
+.custom-error-graphic {
+    -fx-text-fill: #d7423c;
+}
+
+.custom-information-graphic {
+    -fx-text-fill: forestgreen;
+}
+
+.custom-warning-graphic {
+    -fx-text-fill: gold;
+}

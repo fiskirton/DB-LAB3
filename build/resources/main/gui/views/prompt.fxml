@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="248.0" prefWidth="455.0" stylesheets="@prompt.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.PromptController">
+   <children>
+      <VBox alignment="CENTER" prefHeight="248.0" prefWidth="455.0" spacing="1.0">
+         <children>
+            <Label alignment="CENTER" prefHeight="63.0" prefWidth="247.0" text="Dark Souls Armory" textAlignment="CENTER" />
+            <Button fx:id="create_db_btn" alignment="CENTER" mnemonicParsing="false" onAction="#createDB" prefHeight="26.0" prefWidth="358.0" text="Create Database" textAlignment="CENTER" />
+            <Button fx:id="open_db_btn" onAction="#openDB" mnemonicParsing="false" prefHeight="26.0" prefWidth="358.0" text="Open Database" />
+            <Button fx:id="drop_db_btn" mnemonicParsing="false" onAction="#dropDB" prefHeight="26.0" prefWidth="358.0" text="Delete Database" textAlignment="CENTER" />
+         </children>
+      </VBox>
+   </children>
+</Pane>

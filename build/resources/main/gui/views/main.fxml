@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.glyphs.fontawesome.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import gui.custom.CharacterTextField?>
+<AnchorPane prefHeight="900.0" prefWidth="1600.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.MainController">
+   <children>
+      <HBox prefHeight="50.0" prefWidth="1400.0" styleClass="hbox">
+         <children>
+            <HBox alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="700.0" styleClass="actions-box">
+               <children>
+                  <Button id="add-record-btn" fx:id="addRecordButton" mnemonicParsing="false" onAction="#addRecord">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="PLUS" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Add new item" />
+                     </tooltip>
+                  </Button>
+                  <Button id="delete-record-btn" fx:id="deleteRecordButton" disable="true" mnemonicParsing="false" onAction="#deleteSelectedRow">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="MINUS" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Delete selected item" />
+                     </tooltip>
+                  </Button>
+                  <Button id="remove-all_button" fx:id="removeAllButton" disable="true" mnemonicParsing="false" onAction="#deleteAllRows">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="REMOVE" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Delete items with selected title" />
+                     </tooltip>
+                  </Button>
+                  <Button id="commit-btn" fx:id="commitButton" disable="true" mnemonicParsing="false" onAction="#commitChanges">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="SAVE" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Commit changes" />
+                     </tooltip>
+                  </Button>
+                  <Button id="rollback-btn" fx:id="rollbackButton" disable="true" mnemonicParsing="false" onAction="#rollbackChanges">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="UNDO" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Rollback changes" />
+                     </tooltip>
+                  </Button>
+                  <Button id="truncate-btn" fx:id="truncateButton" disable="true" mnemonicParsing="false" onAction="#truncateCurrentTable">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="ERASER" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Truncate current table" />
+                     </tooltip>
+                  </Button>
+                  <Button id="truncate-all-btn" fx:id="truncateAllButton" disable="true" mnemonicParsing="false" onAction="#truncateAllTables">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="TRASH" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Truncate all tables" />
+                     </tooltip>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets left="15.0" />
+               </padding>
+            </HBox>
+            <HBox alignment="CENTER_RIGHT" layoutX="700.0" prefHeight="50.0" prefWidth="700.0" spacing="5.0" styleClass="search-box" HBox.hgrow="ALWAYS">
+               <children>
+                  <Button id="search-btn" fx:id="searchButton" mnemonicParsing="false" onAction="#findItems">
+                     <graphic>
+                        <FontAwesomeIconView glyphName="SEARCH" styleClass="icon" />
+                     </graphic>
+                     <tooltip>
+                        <Tooltip text="Find items" />
+                     </tooltip>
+                  </Button>
+                  <CharacterTextField id="search-area" fx:id="searchArea" onAction="#findItems" prefHeight="26.0" prefWidth="287.0" promptText="Type title and press enter">
+                     <tooltip>
+                        <Tooltip text="Press enter to start search" />
+                     </tooltip>
+                  </CharacterTextField>
+               </children>
+               <padding>
+                  <Insets right="15.0" />
+               </padding></HBox>
+         </children></HBox>
+      <AnchorPane fx:id="tablePane" layoutY="50.0" prefHeight="850.0" prefWidth="1400.0" styleClass="pane" />
+      <VBox fx:id="funcPanel" alignment="TOP_CENTER" layoutX="1400.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="900.0" prefWidth="200.0" styleClass="vbox">
+         <children>
+            <VBox alignment="TOP_CENTER" prefHeight="390.0" prefWidth="170.0" styleClass="vbox-inner">
+               <children>
+                  <Label styleClass="vbox-label" text="Tables" VBox.vgrow="ALWAYS">
+                     <VBox.margin>
+                        <Insets bottom="15.0" top="15.0" />
+                     </VBox.margin>
+                  </Label>
+                  <Button mnemonicParsing="false" onAction="#showItemsTable" text="Items" VBox.vgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#showLocationsTable" text="Locations" VBox.vgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#showDropTypesTable" text="Drop types" VBox.vgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#showCategoriesTable" prefWidth="62.0" text="Categories" VBox.vgrow="ALWAYS" />
+               </children>
+            </VBox>
+            <VBox fx:id="filterBox" alignment="TOP_CENTER" prefHeight="390.0" prefWidth="170.0" styleClass="vbox-inner">
+               <children>
+                  <Label styleClass="vbox-label" text="Filters">
+                     <VBox.margin>
+                        <Insets bottom="15.0" top="15.0" />
+                     </VBox.margin>
+                  </Label>
+                  <Label styleClass="filter-label" text="Location" />
+                  <ComboBox fx:id="locationFilter" prefWidth="150.0">
+                     <VBox.margin>
+                        <Insets bottom="40.0" />
+                     </VBox.margin>
+                  </ComboBox>
+                  <Label styleClass="filter-label" text="Drop type" />
+                  <ComboBox fx:id="dropTypeFilter" prefWidth="150.0">
+                     <VBox.margin>
+                        <Insets bottom="40.0" />
+                     </VBox.margin>
+                  </ComboBox>
+                  <Label styleClass="filter-label" text="Category" />
+                  <ComboBox fx:id="categoryFilter" prefWidth="150.0">
+                     <VBox.margin>
+                        <Insets bottom="40.0" />
+                     </VBox.margin>
+                  </ComboBox>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                  </GridPane>
+               </children>
+            </VBox>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding></VBox>
+   </children>
+</AnchorPane>

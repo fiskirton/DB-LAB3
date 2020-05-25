@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'org.openjfx.javafxplugin' version '0.0.8'
+}
+
+group 'db'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.mybatis:mybatis:3.5.4'
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
+    compile group: 'de.jensd', name: 'fontawesomefx-fontawesome', version: '4.7.0-9.1.2'
+    compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
+}
+
+javafx {
+    version = '14'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    distributionUrl = 'https://services.gradle.org/distributions/gradle-6.4-bin.zip'
+}

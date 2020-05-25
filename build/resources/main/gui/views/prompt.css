@@ -1,0 +1,23 @@
+.root {
+    -fx-background-color: #3C3F41;
+}
+
+.root * {
+    -fx-font-family: Inconsolata;
+    -fx-text-fill: #d8d8d8;
+}
+
+.button {
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: inherit;
+    -fx-font-size: 12pt;
+}
+
+.button:hover {
+    -fx-background-color: #2F65CA;
+}
+
+.button:pressed, .button:default:hover:pressed {
+    -fx-background-color: #3B75E1;
+}
