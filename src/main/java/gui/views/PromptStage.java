@@ -25,6 +25,7 @@ public class PromptStage {
 		});
 		Scene promptScene = new Scene(root);
 		promptStage.setScene(promptScene);
+		promptStage.setTitle("DS1 ARMORY");
 		controller = loader.getController();
 		controller.setPromptStage(this);
 	}

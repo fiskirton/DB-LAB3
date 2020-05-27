@@ -1,6 +1,7 @@
 package db.models;
 
 import extra.SQLFuncs;
+import javafx.beans.property.StringProperty;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
@@ -10,8 +11,10 @@ import java.util.List;
 public enum DB {
 	INSTANCE;
 	
-	private static final String HOST_DB_URL = "jdbc:postgresql://localhost:5432/";
+	private static final String HOST_DB_URL = "jdbc:postgresql://localhost:5432/sodae";
 	private static final String MAIN_DB_URL = "jdbc:postgresql://localhost:5432/ds1_armory";
+	private static final String PG_PASS = System.getenv("PGPASSWORD");
+	private static final String PG_USER = System.getenv("PGUSER");
 	private Connection host_connection;
 	private Connection main_connection;
 	
@@ -25,8 +28,9 @@ public enum DB {
 	public boolean createDB() throws SQLException {
 		host_connection = openConnection(HOST_DB_URL);
 		
-		CallableStatement createDBStatement = host_connection.prepareCall("{? = call create_db}");
+		CallableStatement createDBStatement = host_connection.prepareCall("{? = call create_db(?)}");
 		createDBStatement.registerOutParameter(1, Types.BOOLEAN);
+		createDBStatement.setString(2, PG_PASS);
 		createDBStatement.executeUpdate();
 		
 		boolean response = createDBStatement.getBoolean(1);
@@ -39,8 +43,9 @@ public enum DB {
 	public boolean dropDB() throws SQLException {
 		host_connection = openConnection(HOST_DB_URL);
 		
-		CallableStatement dropDBStatement = host_connection.prepareCall("{? = call drop_db}");
+		CallableStatement dropDBStatement = host_connection.prepareCall("{? = call drop_db(?)}");
 		dropDBStatement.registerOutParameter(1, Types.BOOLEAN);
+		dropDBStatement.setString(2, PG_PASS);
 		dropDBStatement.executeUpdate();
 		
 		boolean response = dropDBStatement.getBoolean(1);
@@ -82,8 +87,8 @@ public enum DB {
 	
 	public <T extends BaseModel> List<T> getData(Class<T> tClass, String funcStatement) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement getItemsStatement = main_connection.prepareCall(funcStatement);
-		ResultSet rs = getItemsStatement.executeQuery();
+		CallableStatement getDataStatement = main_connection.prepareCall(funcStatement);
+		ResultSet rs = getDataStatement.executeQuery();
 		
 		closeConnection(main_connection);
 		
@@ -109,6 +114,10 @@ public enum DB {
 		
 		return data;
 	}
+
+	public List<Record> getRecords() throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+		return getData(Record.class, "{call get_records}");
+	}
  
 	public List<Item> getItems() throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
 		return getData(Item.class, "{call get_items}");
@@ -126,34 +135,34 @@ public enum DB {
 		return getData(Category.class, "{call get_categories}");
 	}
 	
-	public boolean addItem(int id, String title, String location, String dropType, String category, int basePrice, int ng) throws SQLException {
+	public boolean addRecord(int id, String item, String location, String dropType, String category, int basePrice, int ng) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement addItemStatment = main_connection.prepareCall("{? = call add_item(?,?,?,?,?,?,?)}");
+		CallableStatement addRecordStatment = main_connection.prepareCall("{? = call add_record(?,?,?,?,?,?,?)}");
 		
-		addItemStatment.registerOutParameter(1, Types.BOOLEAN);
-		addItemStatment.setInt(2, id);
-		addItemStatment.setString(3, title);
-		addItemStatment.setString(4, location);
-		addItemStatment.setString(5, dropType);
-		addItemStatment.setString(6, category);
-		addItemStatment.setInt(7, basePrice);
-		addItemStatment.setInt(8, ng);
+		addRecordStatment.registerOutParameter(1, Types.BOOLEAN);
+		addRecordStatment.setInt(2, id);
+		addRecordStatment.setString(3, item);
+		addRecordStatment.setString(4, location);
+		addRecordStatment.setString(5, dropType);
+		addRecordStatment.setString(6, category);
+		addRecordStatment.setInt(7, basePrice);
+		addRecordStatment.setInt(8, ng);
 		
 		try {
-			addItemStatment.executeUpdate();
+			addRecordStatment.executeUpdate();
 		} catch (SQLException ex) {
 			return false;
 		}
 		
 		closeConnection(main_connection);
-		return addItemStatment.getBoolean(1);
+		return addRecordStatment.getBoolean(1);
 	}
 	
-	public Item getItemById(int id) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+	public Record getRecordById(int id) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement getItemByIdStatement = main_connection.prepareCall("{call get_item_by_id(?)}");
-		getItemByIdStatement.setInt(1, id);
-		ResultSet rs = getItemByIdStatement.executeQuery();
+		CallableStatement getRecordByIdStatement = main_connection.prepareCall("{call get_record_by_id(?)}");
+		getRecordByIdStatement.setInt(1, id);
+		ResultSet rs = getRecordByIdStatement.executeQuery();
 		rs.next();
 		int columnsNum = rs.getMetaData().getColumnCount();
 		String[] data = new String[columnsNum];
@@ -162,75 +171,67 @@ public enum DB {
 		}
 		
 		closeConnection(main_connection);
-		return Item.getInstance(Item.class, data);
+		return Record.getInstance(Record.class, data);
 	}
 	
-	public boolean deleteItems(String title) throws SQLException {
+	public boolean deleteRecords(String title) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement deleteItemsStatement = main_connection.prepareCall("{? = call delete_items(?)}");
-		deleteItemsStatement.registerOutParameter(1, Types.BOOLEAN);
-		deleteItemsStatement.setString(2, title);
+		CallableStatement deleteRecordsStatement = main_connection.prepareCall("{? = call delete_records(?)}");
+		deleteRecordsStatement.registerOutParameter(1, Types.BOOLEAN);
+		deleteRecordsStatement.setString(2, title);
 		
-		deleteItemsStatement.executeUpdate();
+		deleteRecordsStatement.executeUpdate();
 		
 		closeConnection(main_connection);
-		return deleteItemsStatement.getBoolean(1);
+		return deleteRecordsStatement.getBoolean(1);
 	}
 	
-	public boolean deleteItem(int id) throws SQLException {
+	public boolean deleteRecord(int id) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement deleteItemStatement = main_connection.prepareCall("{? = call delete_item(?)}");
-		deleteItemStatement.registerOutParameter(1, Types.BOOLEAN);
-		deleteItemStatement.setInt(2, id);
+		CallableStatement deleteRecordStatement = main_connection.prepareCall("{? = call delete_record(?)}");
+		deleteRecordStatement.registerOutParameter(1, Types.BOOLEAN);
+		deleteRecordStatement.setInt(2, id);
 		
-		deleteItemStatement.executeUpdate();
+		deleteRecordStatement.executeUpdate();
 		
 		closeConnection(main_connection);
-		return deleteItemStatement.getBoolean(1);
+		return deleteRecordStatement.getBoolean(1);
+	}
+
+	public boolean deleteItem(String title) throws SQLException {
+		return deleteData(title, "{? = call delete_item(?)}");
 	}
 	
 	public boolean deleteLocation(String title) throws SQLException {
-		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement deleteLocationStatement = main_connection.prepareCall("{? = call delete_location(?)}");
-		deleteLocationStatement.registerOutParameter(1, Types.BOOLEAN);
-		deleteLocationStatement.setString(2, title);
-		
-		deleteLocationStatement.executeUpdate();
-		
-		closeConnection(main_connection);
-		return deleteLocationStatement.getBoolean(1);
+		return deleteData(title, "{? = call delete_location(?)}");
 	}
 	
 	public boolean deleteDropType(String type) throws SQLException {
-		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement deleteDropTypeStatement = main_connection.prepareCall("{? = call delete_drop_type(?)}");
-		deleteDropTypeStatement.registerOutParameter(1, Types.BOOLEAN);
-		deleteDropTypeStatement.setString(2, type);
-		
-		deleteDropTypeStatement.executeUpdate();
-		
-		closeConnection(main_connection);
-		return deleteDropTypeStatement.getBoolean(1);
+		return deleteData(type, "{? = call delete_drop_type(?)}");
 	}
 	
 	public boolean deleteCategory(String title) throws SQLException {
+		return deleteData(title, "{? = call delete_category(?)}");
+	}
+
+	public boolean deleteData(String title, String funcStatement) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement deleteCategoryStatement = main_connection.prepareCall("{? = call delete_category(?)}");
-		deleteCategoryStatement.registerOutParameter(1, Types.BOOLEAN);
-		deleteCategoryStatement.setString(2, title);
-		
-		deleteCategoryStatement.executeUpdate();
-		
+		CallableStatement deleteDataStatement = main_connection.prepareCall(funcStatement);
+		deleteDataStatement.registerOutParameter(1, Types.BOOLEAN);
+		deleteDataStatement.setString(2, title);
+
+		deleteDataStatement.executeUpdate();
+
 		closeConnection(main_connection);
-		return deleteCategoryStatement.getBoolean(1);
+		return deleteDataStatement.getBoolean(1);
 	}
 	
-	public boolean editItem(String id, String newTitle, String newLocation, String newDropType, String newCategory, int newNG) throws SQLException {
+	public boolean editRecord(String id, String newItem, String newLocation, String newDropType, String newCategory, int newNG) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement editItemStatement = main_connection.prepareCall("{? = call edit_item(?,?,?,?,?,?)}");
+		CallableStatement editItemStatement = main_connection.prepareCall("{? = call edit_record(?,?,?,?,?,?)}");
 		editItemStatement.registerOutParameter(1, Types.BOOLEAN);
 		editItemStatement.setString(2, id);
-		editItemStatement.setString(3, newTitle);
+		editItemStatement.setString(3, newItem);
 		editItemStatement.setString(4, newLocation);
 		editItemStatement.setString(5, newDropType);
 		editItemStatement.setString(6, newCategory);
@@ -241,6 +242,10 @@ public enum DB {
 		closeConnection(main_connection);
 		
 		return editItemStatement.getBoolean(1);
+	}
+
+	public boolean editItem(int id, String newTitle) throws SQLException {
+		return editForeignTable(id, newTitle, "{? = call edit_item(?, ?)}");
 	}
 	
 	public boolean editLocation(int id, String newTitle) throws SQLException {
@@ -273,6 +278,10 @@ public enum DB {
 		return truncateTable("{? = call truncate_all}");
 	}
 	
+	public boolean truncateRecords() throws SQLException {
+		return truncateTable("{? = call truncate_records}");
+	}
+
 	public boolean truncateItems() throws SQLException {
 		return truncateTable("{? = call truncate_items}");
 	}
@@ -301,23 +310,23 @@ public enum DB {
 		return truncateTableStatement.getBoolean(1);
 	}
 	
-	public List<Item> findItems(String itemTitle, String location, String dropType, String category) throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+	public List<Record> findRecords(String item, String location, String dropType, String category) throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement findItemsStatement =  main_connection.prepareCall("{call find_items(?,?,?,?)}");
-		findItemsStatement.setString(1, itemTitle);
-		findItemsStatement.setString(2, location);
-		findItemsStatement.setString(3, dropType);
-		findItemsStatement.setString(4, category);
+		CallableStatement findRecordsStatement =  main_connection.prepareCall("{call find_records(?,?,?,?)}");
+		findRecordsStatement.setString(1, item);
+		findRecordsStatement.setString(2, location);
+		findRecordsStatement.setString(3, dropType);
+		findRecordsStatement.setString(4, category);
 		
-		ResultSet rs = findItemsStatement.executeQuery();
+		ResultSet rs = findRecordsStatement.executeQuery();
 		
 		closeConnection(main_connection);
 		
-		return extractData(Item.class, rs);
+		return extractData(Record.class, rs);
 	}
 	
 	private Connection openConnection(String URL) throws SQLException {
-		return DriverManager.getConnection(URL);
+		return DriverManager.getConnection(URL, PG_USER, PG_PASS);
 	}
 	
 	private void closeConnection(Connection connection) throws SQLException {

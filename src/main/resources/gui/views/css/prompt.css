@@ -3,7 +3,7 @@
 }
 
 .root * {
-    -fx-font-family: Inconsolata;
+    -fx-font-family: "Droid Sans";
     -fx-text-fill: #d8d8d8;
 }
 

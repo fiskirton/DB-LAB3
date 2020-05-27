@@ -1,4 +1,5 @@
 plugins {
+    id 'application'
     id 'java'
     id 'org.openjfx.javafxplugin' version '0.0.8'
 }
@@ -20,6 +21,17 @@ dependencies {
 javafx {
     version = '14'
     modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+mainClassName = 'gui.Launcher'
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'gui.Launcher'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 wrapper {

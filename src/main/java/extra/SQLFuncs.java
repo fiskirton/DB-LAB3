@@ -19,7 +19,7 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function create_db ()\n" +
+			"create or replace function create_db (password text)\n" +
 			"returns bool as\n" +
 			"$body$\n" +
 			"    declare\n" +
@@ -31,7 +31,7 @@ public class SQLFuncs {
 			"            return false;\n" +
 			"        else\n" +
 			"            perform dblink_exec (\n" +
-			"                'dbname=' || current_database(),\n" +
+			"                'dbname=' || current_database() || ' user=' || \"current_user\"() || ' password=' || password,\n" +
 			"                'create database ' || quote_ident(db_name) ||\n" +
 			"                ' with owner ' || quote_ident(current_user)\n" +
 			"                );\n" +
@@ -40,7 +40,7 @@ public class SQLFuncs {
 			"    end\n" +
 			"$body$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function drop_db ()\n" +
+			"create or replace function drop_db (password text)\n" +
 			"returns bool as\n" +
 			"$body$\n" +
 			"    declare\n" +
@@ -52,7 +52,7 @@ public class SQLFuncs {
 			"            return false;\n" +
 			"        else\n" +
 			"            perform dblink_exec (\n" +
-			"                'dbname=' || current_database(),\n" +
+			"                'dbname=' || current_database() || ' user=' || \"current_user\"() || ' password=' || password,\n" +
 			"                'drop database ' || quote_ident(db_name)\n" +
 			"            );\n" +
 			"            return true;\n" +
@@ -65,6 +65,13 @@ public class SQLFuncs {
 			"returns void as\n" +
 			"$body$\n" +
 			"    begin\n" +
+			"        create table if not exists items (\n" +
+			"            item_id serial primary key,\n" +
+			"            item_title text\n" +
+			"        );\n" +
+			"\n" +
+			"        create unique index if not exists item_idx on items(lower(item_title));\n" +
+			"\n" +
 			"        create table if not exists locations (\n" +
 			"            location_id serial primary key,\n" +
 			"            location_title text\n" +
@@ -86,20 +93,22 @@ public class SQLFuncs {
 			"\n" +
 			"        create unique index if not exists category_idx on categories(lower(category_title));\n" +
 			"\n" +
-			"        create table if not exists items (\n" +
-			"            item_id text primary key,\n" +
-			"            item_title text not null,\n" +
+			"        create table if not exists records (\n" +
+			"            record_id text primary key,\n" +
+			"            item int not null,\n" +
 			"            location int not null,\n" +
 			"            drop_type int not null,\n" +
 			"            category int not null,\n" +
-			"            base_price int not null,\n" +
-			"            ng int not null check ( ng <= 5 ) default 1,\n" +
+			"            base_price int,\n" +
+			"            ng int not null check (ng > 0 and ng <= 5) default 1,\n" +
 			"            ng_price int,\n" +
+			"            foreign key (item) references items (item_id) on delete cascade on update cascade ,\n" +
 			"            foreign key (location) references locations (location_id) on delete cascade on update cascade,\n" +
 			"            foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,\n" +
 			"            foreign key (category) references categories(category_id) on delete cascade on update cascade\n" +
 			"        );\n" +
-			"        create index if not exists item_idx on items (lower(item_title));\n" +
+
+			"        create unique index if not exists item_price_idx on records(item, location, drop_type, category);\n" +
 			"\n" +
 			"        create or replace function set_ng_price()\n" +
 			"        returns trigger as\n" +
@@ -110,15 +119,15 @@ public class SQLFuncs {
 			"            end;\n" +
 			"        $$ language plpgsql;\n" +
 			"\n" +
-			"        drop trigger if exists ng_price_trigger on items;\n" +
+			"        drop trigger if exists ng_price_trigger on records;\n" +
 			"\n" +
 			"        create trigger ng_price_trigger\n" +
-			"        before insert or update on items\n" +
+			"        before insert or update on records\n" +
 			"        for row execute procedure set_ng_price();\n" +
 			"    end;\n" +
-			"$body$ language plpgsql;" +
+			"$body$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function get_items ()\n" +
+			"create or replace function get_records ()\n" +
 			"returns table (\n" +
 			"    id text,\n" +
 			"    title text,\n" +
@@ -131,22 +140,29 @@ public class SQLFuncs {
 			"$body$\n" +
 			"    begin\n" +
 			"        return query\n" +
-			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng, i.ng_price\n" +
-			"            from items i\n" +
-			"            inner join locations l on i.location = l.location_id\n" +
-			"            inner join drop_types dt on i.drop_type = dt.drop_type_id\n" +
-			"            inner join categories c on i.category = c.category_id;\n" +
+			"            select r.record_id, i.item_title, l.location_title, dt.drop_type, c.category_title, r.ng, r.ng_price\n" +
+			"            from records r\n" +
+			"            inner join items i on r.item = i.item_id\n" +
+			"            inner join locations l on r.location = l.location_id\n" +
+			"            inner join drop_types dt on r.drop_type = dt.drop_type_id\n" +
+			"            inner join categories c on r.category = c.category_id;\n" +
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function add_item(id int, title text, loc text, dt text, categ text, bp int, ng_val int)\n" +
+			"create or replace function add_record(id int, title text, loc text, dt text, categ text, bp int, ng_val int)\n" +
 			"returns bool as\n" +
 			"$body$\n" +
 			"    declare\n" +
+			"            i_id int;\n" +
 			"            l_id int;\n" +
 			"            dt_id int;\n" +
 			"            c_id int;\n" +
 			"    begin\n" +
+			"\n" +
+			"        if not exists(select item_title from items where lower(item_title) = lower(title))\n" +
+			"        then\n" +
+			"            insert into items (item_title) values (initcap(title));\n" +
+			"        end if;\n" +
 			"\n" +
 			"        if not exists(select location_title from locations where lower(location_title) = lower(loc))\n" +
 			"        then\n" +
@@ -163,12 +179,13 @@ public class SQLFuncs {
 			"            insert into categories (category_title) values (initcap(categ));\n" +
 			"        end if;\n" +
 			"\n" +
+			"        select item_id into i_id from items where item_title = initcap(title);\n" +
 			"        select location_id into l_id from locations where location_title = initcap(loc);\n" +
 			"        select drop_type_id into dt_id from drop_types where drop_type = initcap(dt);\n" +
 			"        select category_id into c_id from categories where category_title = initcap(categ);\n" +
 			"\n" +
-			"        insert into items (item_id, item_title, location, drop_type, category, base_price, ng)\n" +
-			"        values (to_hex(id), initcap(title), l_id, dt_id, c_id, bp, ng_val);\n" +
+			"        insert into records (record_id, item, location, drop_type, category, base_price, ng)\n" +
+			"        values (to_hex(id), i_id, l_id, dt_id, c_id, bp, ng_val);\n" +
 			"        return true;\n" +
 			"        exception\n" +
 			"         when unique_violation then\n" +
@@ -176,14 +193,20 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function edit_item(id text, title text, loc text, dt text, categ text, ng_val int)\n" +
+			"create or replace function edit_record(id text, title text, loc text, dt text, categ text, ng_val int)\n" +
 			"returns bool as\n" +
 			"$body$\n" +
 			"    declare\n" +
+			"            i_id int;\n" +
 			"            l_id int;\n" +
 			"            dt_id int;\n" +
 			"            c_id int;\n" +
 			"    begin\n" +
+			"\n" +
+			"        if not exists(select item_title from items where lower(item_title) = lower(title))\n" +
+			"        then\n" +
+			"            insert into items (item_title) values (initcap(title));\n" +
+			"        end if;\n" +
 			"\n" +
 			"        if not exists(select location_title from locations where lower(location_title) = lower(loc))\n" +
 			"        then\n" +
@@ -192,25 +215,26 @@ public class SQLFuncs {
 			"\n" +
 			"        if not exists(select drop_type from drop_types where lower(drop_type) = lower(dt))\n" +
 			"        then\n" +
-			"        insert into drop_types (drop_type) values (initcap(dt));\n" +
+			"            insert into drop_types (drop_type) values (initcap(dt));\n" +
 			"        end if;\n" +
 			"\n" +
 			"        if not exists(select category_title from categories where lower(category_title) = lower(categ))\n" +
 			"        then\n" +
-			"        insert into categories (category_title) values (initcap(categ));\n" +
+			"            insert into categories (category_title) values (initcap(categ));\n" +
 			"        end if;\n" +
 			"\n" +
+			"        select item_id into i_id from items where item_title = initcap(title);\n" +
 			"        select location_id into l_id from locations where location_title = initcap(loc);\n" +
 			"        select drop_type_id into dt_id from drop_types where drop_type = initcap(dt);\n" +
 			"        select category_id into c_id from categories where category_title = initcap(categ);\n" +
 			"\n" +
-			"        update items\n" +
-			"            set item_title = initcap(title),\n" +
+			"        update records\n" +
+			"            set item = i_id,\n" +
 			"                location = l_id,\n" +
 			"                drop_type = dt_id,\n" +
 			"                category = c_id,\n" +
 			"                ng = ng_val\n" +
-			"        where item_id like id;\n" +
+			"        where record_id like id;\n" +
 			"        return true;\n" +
 			"\n" +
 			"        exception\n" +
@@ -218,6 +242,22 @@ public class SQLFuncs {
 			"                return false;\n" +
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
+			"\n" +
+			"create or replace function edit_item(id int, new_title text)\n" +
+			"returns bool as\n" +
+			"$$\n" +
+			"    begin\n" +
+			"        update items\n" +
+			"            set item_title = initcap(new_title)\n" +
+			"        where item_id = id;\n" +
+			"        return true;\n" +
+			"\n" +
+			"    exception\n" +
+			"        when unique_violation then\n" +
+			"            return false;\n" +
+			"    end;\n" +
+			"$$ language plpgsql;\n" +
+			"\n" +
 			"\n" +
 			"create or replace function edit_location(id int, new_title text)\n" +
 			"returns bool as\n" +
@@ -264,6 +304,17 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
+			"create or replace function get_items()\n" +
+			"returns table (\n" +
+			"    id int,\n" +
+			"    title text\n" +
+			") as\n" +
+			"$$\n" +
+			"begin\n" +
+			"    return query select * from items;\n" +
+			"end;\n" +
+			"$$ language plpgsql;\n" +
+			"\n" +
 			"create or replace function get_locations()\n" +
 			"returns table (\n" +
 			"    id int,\n" +
@@ -301,7 +352,16 @@ public class SQLFuncs {
 			"returns bool as\n" +
 			"$$\n" +
 			"    begin\n" +
-			"        truncate items, locations, drop_types, categories restart identity cascade;\n" +
+			"        truncate records, items, locations, drop_types, categories restart identity cascade;\n" +
+			"        return true;\n" +
+			"    end;\n" +
+			"$$ language plpgsql;\n" +
+			"\n" +
+			"create or replace function truncate_records()\n" +
+			"returns bool as\n" +
+			"$$\n" +
+			"    begin\n" +
+			"        truncate records;\n" +
 			"        return true;\n" +
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
@@ -310,10 +370,11 @@ public class SQLFuncs {
 			"returns bool as\n" +
 			"$$\n" +
 			"    begin\n" +
-			"        truncate items;\n" +
+			"        truncate items restart identity cascade;\n" +
 			"        return true;\n" +
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
+			"\n" +
 			"\n" +
 			"create or replace function truncate_locations()\n" +
 			"returns bool as\n" +
@@ -342,7 +403,7 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function find_items(item_param text default '', loc_param text default '', dt_param text default '', categ_param text = '')\n" +
+			"create or replace function find_records(item_param text default '', loc_param text default '', dt_param text default '', categ_param text = '')\n" +
 			"returns table (\n" +
 			"    id text,\n" +
 			"    title text,\n" +
@@ -355,11 +416,12 @@ public class SQLFuncs {
 			"$$\n" +
 			"    begin\n" +
 			"        return query\n" +
-			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng, i.ng_price\n" +
-			"            from items i\n" +
-			"            inner join locations l on i.location = l.location_id\n" +
-			"            inner join drop_types dt on i.drop_type = dt.drop_type_id\n" +
-			"            inner join categories c on i.category = c.category_id\n" +
+			"            select r.record_id, i.item_title, l.location_title, dt.drop_type, c.category_title, r.ng, r.ng_price\n" +
+			"            from records r\n" +
+			"            inner join items i on r.item = i.item_id\n" +
+			"            inner join locations l on r.location = l.location_id\n" +
+			"            inner join drop_types dt on r.drop_type = dt.drop_type_id\n" +
+			"            inner join categories c on r.category = c.category_id\n" +
 			"            where (item_param = '' or lower(i.item_title) like concat('%', lower(item_param), '%')) and\n" +
 			"                  (loc_param = '' or lower(l.location_title) = lower(loc_param)) and\n" +
 			"                  (dt_param = '' or lower(dt.drop_type) = lower(dt_param)) and\n" +
@@ -367,7 +429,7 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function get_item_by_id(itId int)\n" +
+			"create or replace function get_record_by_id(rec_id int)\n" +
 			"returns table (\n" +
 			"    id text,\n" +
 			"    title text,\n" +
@@ -380,21 +442,32 @@ public class SQLFuncs {
 			"$$\n" +
 			"    begin\n" +
 			"        return query\n" +
-			"            select i.item_id, i.item_title, l.location_title, dt.drop_type, c.category_title, i.ng, i.ng_price\n" +
-			"            from items i\n" +
-			"            inner join locations l on i.location = l.location_id\n" +
-			"            inner join drop_types dt on i.drop_type = dt.drop_type_id\n" +
-			"            inner join categories c on i.category = c.category_id\n" +
-			"            where i.item_id = to_hex(itId);\n" +
+			"            select r.record_id, i.item_title, l.location_title, dt.drop_type, c.category_title, r.ng, r.ng_price\n" +
+			"            from records r\n" +
+			"            inner join items i on r.item = i.item_id\n" +
+			"            inner join locations l on r.location = l.location_id\n" +
+			"            inner join drop_types dt on r.drop_type = dt.drop_type_id\n" +
+			"            inner join categories c on r.category = c.category_id\n" +
+			"            where r.record_id = to_hex(rec_id);\n" +
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function delete_item(id int)\n" +
+			"create or replace function delete_record(id int)\n" +
+			"returns bool as\n" +
+			"$$\n" +
+			"    begin\n" +
+			"        delete from records\n" +
+			"        where record_id = to_hex(id);\n" +
+			"        return true;\n" +
+			"    end;\n" +
+			"$$ language plpgsql;\n" +
+			"\n" +
+			"create or replace function delete_item(title text)\n" +
 			"returns bool as\n" +
 			"$$\n" +
 			"    begin\n" +
 			"        delete from items\n" +
-			"        where item_id = to_hex(id);\n" +
+			"        where lower(item_title) = lower(title);\n" +
 			"        return true;\n" +
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
@@ -429,12 +502,16 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function delete_items(title text)\n" +
+			"create or replace function delete_records(title text)\n" +
 			"returns bool as\n" +
 			"$$\n" +
 			"    begin\n" +
-			"        delete from items\n" +
-			"        where lower(item_title) = lower(title);\n" +
+			"        delete\n" +
+			"        from records r\n" +
+			"        using items i\n" +
+			"        where r.item = i.item_id and\n" +
+			"              lower(i.item_title) = lower(title);\n" +
+			"\n" +
 			"        return true;\n" +
 			"    end;\n" +
 			"$$ language plpgsql;";

@@ -1,6 +1,7 @@
 package gui.controllers;
 
 import db.models.DB;
+import extra.Alerts;
 import gui.views.CustomAlert;
 import gui.views.MainStage;
 import gui.views.PromptStage;
@@ -15,11 +16,6 @@ import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class PromptController implements Initializable {
-	
-	@FXML
-	private Button open_db_btn;
-	@FXML
-	private Button create_db_btn;
 	
 	private final DB db = DB.INSTANCE;
 	private PromptStage promptStage;
@@ -67,24 +63,11 @@ public class PromptController implements Initializable {
 	}
 	
 	private void showInfoAlert(String message) {
-		Alert alert = CustomAlert.Builder()
-					.alertType(Alert.AlertType.INFORMATION)
-					.title("Success")
-					.content(message)
-					.icon()
-					.build();
-		
-		alert.showAndWait();
+		Alerts.getInfoAlert(message).showAndWait();
 	}
 	
 	private void showErrorAlert(String message) {
-		Alert alert = CustomAlert.Builder()
-				.alertType(Alert.AlertType.ERROR)
-				.title("Error")
-				.content(message)
-				.icon()
-				.build();
-		alert.showAndWait();
+		Alerts.getErrorAlert(message).showAndWait();
 	}
 	
 	public void setPromptStage(PromptStage promptStage) {

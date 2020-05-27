@@ -6,9 +6,11 @@
 <?import javafx.scene.layout.*?>
 
 <?import gui.custom.CharacterTextField?>
-<AnchorPane prefHeight="900.0" prefWidth="1600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.MainController">
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1400.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controllers.MainController">
    <children>
-      <HBox prefHeight="50.0" prefWidth="1400.0" styleClass="hbox">
+      <AnchorPane fx:id="tablePane" layoutY="50.0" prefHeight="750.0" prefWidth="1200.0" styleClass="pane" />
+      <HBox prefHeight="50.0" prefWidth="1200.0" styleClass="hbox">
          <children>
             <HBox alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="700.0" styleClass="actions-box">
                <children>
@@ -17,7 +19,7 @@
                         <FontAwesomeIconView glyphName="PLUS" styleClass="icon" />
                      </graphic>
                      <tooltip>
-                        <Tooltip text="Add new item" />
+                        <Tooltip text="Add new record" />
                      </tooltip>
                   </Button>
                   <Button id="delete-record-btn" fx:id="deleteRecordButton" disable="true" mnemonicParsing="false" onAction="#deleteSelectedRow">
@@ -25,7 +27,7 @@
                         <FontAwesomeIconView glyphName="MINUS" styleClass="icon" />
                      </graphic>
                      <tooltip>
-                        <Tooltip text="Delete selected item" />
+                        <Tooltip text="Delete selected record" />
                      </tooltip>
                   </Button>
                   <Button id="remove-all_button" fx:id="removeAllButton" disable="true" mnemonicParsing="false" onAction="#deleteAllRows">
@@ -91,25 +93,27 @@
                </children>
                <padding>
                   <Insets right="15.0" />
-               </padding></HBox>
-         </children></HBox>
-      <AnchorPane fx:id="tablePane" layoutY="50.0" prefHeight="850.0" prefWidth="1400.0" styleClass="pane" />
-      <VBox fx:id="funcPanel" alignment="TOP_CENTER" layoutX="1400.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="900.0" prefWidth="200.0" styleClass="vbox">
+               </padding>
+            </HBox>
+         </children>
+      </HBox>
+      <VBox fx:id="funcPanel" alignment="TOP_CENTER" layoutX="1200.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="800.0" prefWidth="200.0" styleClass="vbox">
          <children>
-            <VBox alignment="TOP_CENTER" prefHeight="390.0" prefWidth="170.0" styleClass="vbox-inner">
+            <VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="200.0" styleClass="vbox-inner">
                <children>
                   <Label styleClass="vbox-label" text="Tables" VBox.vgrow="ALWAYS">
                      <VBox.margin>
                         <Insets bottom="15.0" top="15.0" />
                      </VBox.margin>
                   </Label>
-                  <Button mnemonicParsing="false" onAction="#showItemsTable" text="Items" VBox.vgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#showRecordsTable" text="Records" VBox.vgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#showItemsTable" text="Items" />
                   <Button mnemonicParsing="false" onAction="#showLocationsTable" text="Locations" VBox.vgrow="ALWAYS" />
                   <Button mnemonicParsing="false" onAction="#showDropTypesTable" text="Drop types" VBox.vgrow="ALWAYS" />
                   <Button mnemonicParsing="false" onAction="#showCategoriesTable" prefWidth="62.0" text="Categories" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
-            <VBox fx:id="filterBox" alignment="TOP_CENTER" prefHeight="390.0" prefWidth="170.0" styleClass="vbox-inner">
+            <VBox fx:id="filterBox" alignment="TOP_CENTER" prefHeight="400.0" prefWidth="200.0" styleClass="vbox-inner">
                <children>
                   <Label styleClass="vbox-label" text="Filters">
                      <VBox.margin>
@@ -152,6 +156,7 @@
          </opaqueInsets>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding></VBox>
+         </padding>
+      </VBox>
    </children>
 </AnchorPane>

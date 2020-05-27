@@ -1,11 +1,10 @@
 package gui.controllers;
 
 import db.models.DB;
-import db.models.Item;
-import gui.views.CustomAlert;
+import db.models.Record;
+import extra.Alerts;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -23,7 +22,7 @@ import org.apache.commons.text.*;
 public class NewRecordController implements Initializable {
 	
 	private final DB db = DB.INSTANCE;
-	private Item newItem;
+	private Record newRecord;
 	private Stage stage;
 	
 	@FXML
@@ -52,44 +51,34 @@ public class NewRecordController implements Initializable {
 			);
 			if (data[i].isEmpty() || data[i].isBlank()) {
 				String emptyField = ((Label)((HBox)mainContainer.getChildren().get(i)).getChildren().get(0)).getText().strip();
-				Alert fieldCannotBeEmptyWarning = CustomAlert.Builder()
-						.alertType(Alert.AlertType.WARNING)
-						.title("Warning")
-						.content("Field '" + emptyField + "' can't be empty")
-						.icon()
-						.build();
-				
-				fieldCannotBeEmptyWarning.showAndWait();
+				Alerts.getWarningAlert("Field '" + emptyField + "' can't be empty").showAndWait();
 				return;
 			}
 		}
-		
-		if (db.addItem(
-				Integer.parseInt(data[0]),
-				data[1],
-				data[2],
-				data[3],
-				data[4],
-				Integer.parseInt(data[5]),
-				Integer.parseInt(data[6])
-		)) {
-			newItem = db.getItemById(Integer.parseInt(data[0]));
-			stage.hide();
-		} else {
-			Alert itemExistsWarning = CustomAlert.Builder()
-					.alertType(Alert.AlertType.WARNING)
-					.title("Warning")
-					.content("Item with given ID already exists")
-					.icon()
-					.build();
-			
-			itemExistsWarning.showAndWait();
-			newItem = null;
+
+		try {
+			if (db.addRecord(
+					Integer.parseInt(data[0]),
+					data[1],
+					data[2],
+					data[3],
+					data[4],
+					Integer.parseInt(data[5]),
+					Integer.parseInt(data[6])
+			)) {
+				newRecord = db.getRecordById(Integer.parseInt(data[0]));
+				stage.hide();
+			} else {
+				Alerts.getWarningAlert("Record with given ID already exists\n or combination of fields is not unique").showAndWait();
+				newRecord = null;
+			}
+		} catch (NumberFormatException exception) {
+			Alerts.getErrorAlert("Too big number for number input field").showAndWait();
 		}
 	}
 	
-	public Item getResult() {
-		return newItem;
+	public Record getResult() {
+		return newRecord;
 	}
 	
 	public void setStage(Stage stage) {

@@ -41,7 +41,7 @@
 }
 
 .custom-error-graphic {
-    -fx-text-fill: #d7423c;
+    -fx-text-fill: orangered;
 }
 
 .custom-information-graphic {

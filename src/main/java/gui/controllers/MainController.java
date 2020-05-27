@@ -1,11 +1,12 @@
 package gui.controllers;
 
 import db.models.*;
+import db.models.Record;
+import extra.Alerts;
 import gui.custom.LimitedTextFieldTableCell;
 import gui.custom.RangeTextField;
-import gui.views.CustomAlert;
 import gui.views.MainStage;
-import gui.views.NewItemDialog;
+import gui.views.NewRecordDialog;
 import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,20 +31,23 @@ public class MainController implements Initializable {
 	
 	private MainStage mainStage;
 	
+	private TableView<Record> recordsTable;
 	private TableView<Item> itemsTable;
 	private TableView<Location> locationsTable;
 	private TableView<DropType> dropTypesTable;
 	private TableView<Category> categoriesTable;
 	private TableView<? extends BaseModel> currentTable;
 	
+	private ObservableList<Record> records;
 	private ObservableList<Item> items;
 	private ObservableList<Location> locations;
 	private ObservableList<DropType> dropTypes;
 	private ObservableList<Category> categories;
 	private ObservableList<? extends BaseModel> currentDataset;
 	
-	private ObservableList<Item> itemsSearch;
-	
+	private ObservableList<Record> recordsSearches;
+
+	private List<Integer> recordsChanged;
 	private List<Integer> itemsChanged;
 	private List<Integer> locationsChanged;
 	private List<Integer> dropTypesChanged;
@@ -89,12 +93,14 @@ public class MainController implements Initializable {
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		initRecordsTable();
 		initItemsTable();
 		initLocationsTable();
 		initDropTypesTable();
 		initCategoriesTable();
 		
 		try {
+			setRecords();
 			setItems();
 			setLocations();
 			setDropTypes();
@@ -106,19 +112,24 @@ public class MainController implements Initializable {
 			throwables.printStackTrace();
 		}
 		
-		setCurrentTable(itemsTable);
-		setCurrentDataset(items);
-		showItemsTable();
+		setCurrentTable(recordsTable);
+		setCurrentDataset(records);
+		showRecordsTable();
 	}
 	
+	public void showRecordsTable() {
+		currentTableClass = Record.class;
+		if (recordsTable.getItems() == recordsSearches) {
+			recordsTable.setItems(records);
+		}
+		showTable(recordsTable, records);
+	}
+
 	public void showItemsTable() {
 		currentTableClass = Item.class;
-		if (itemsTable.getItems() == itemsSearch) {
-			itemsTable.setItems(items);
-		}
 		showTable(itemsTable, items);
 	}
-	
+
 	public void showLocationsTable() {
 		currentTableClass = Location.class;
 		showTable(locationsTable, locations);
@@ -151,7 +162,7 @@ public class MainController implements Initializable {
 			truncateAllButton.setDisable(false);
 		}
 		
-		if (currentTableClass.isAssignableFrom(Item.class)) {
+		if (currentTableClass.isAssignableFrom(Record.class)) {
 			filterBox.setDisable(false);
 			searchArea.setDisable(false);
 		} else {
@@ -168,10 +179,22 @@ public class MainController implements Initializable {
 		categoryFilter.setValue(null);
 	}
 	
-	public void setItems() throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+	public void setRecords() throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+		List<Record> recordsNew = db.getRecords();
+		if (records == null) {
+			records = FXCollections.observableList(recordsNew);
+		} else {
+			records.clear();
+			records.setAll(recordsNew);
+		}
+		recordsTable.setItems(records);
+	}
+
+	public void setItems() throws InvocationTargetException, SQLException, InstantiationException, NoSuchMethodException, IllegalAccessException {
 		List<Item> itemsNew = db.getItems();
 		if (items == null) {
 			items = FXCollections.observableList(itemsNew);
+			itemsTable.setItems(items);
 		} else {
 			items.clear();
 			items.setAll(itemsNew);
@@ -212,7 +235,7 @@ public class MainController implements Initializable {
 		}
 		categoriesTable.setItems(categories);
 	}
-	
+
 	public void setLocationFilter() {
 		locationFilter.setItems(locations);
 	}
@@ -225,35 +248,35 @@ public class MainController implements Initializable {
 		categoryFilter.setItems(categories);
 	}
 	
-	public void initItemsTable() {
-		itemsTable = new TableView<>();
-		TableColumn<Item, String> itemId = new TableColumn<>("Item ID");
-		TableColumn<Item, String> itemTitle = new TableColumn<>("Title");
-		TableColumn<Item, String> location = new TableColumn<>("Location");
-		TableColumn<Item, String> dropType = new TableColumn<>("Drop type");
-		TableColumn<Item, String> category = new TableColumn<>("Category");
-		TableColumn<Item, Integer> ng = new TableColumn<>("NG");
-		TableColumn<Item, Integer> sellingPrice = new TableColumn<>("Selling price");
+	public void initRecordsTable() {
+		recordsTable = new TableView<>();
+		TableColumn<Record, String> recordId = new TableColumn<>("ID");
+		TableColumn<Record, String> item = new TableColumn<>("Title");
+		TableColumn<Record, String> location = new TableColumn<>("Location");
+		TableColumn<Record, String> dropType = new TableColumn<>("Drop type");
+		TableColumn<Record, String> category = new TableColumn<>("Category");
+		TableColumn<Record, Integer> ng = new TableColumn<>("NG");
+		TableColumn<Record, Integer> sellingPrice = new TableColumn<>("Selling price");
 		
-		itemId.setCellValueFactory(cellData -> cellData.getValue().itemIdProperty());
-		itemTitle.setCellValueFactory(cellData -> cellData.getValue().itemTitleProperty());
+		recordId.setCellValueFactory(cellData -> cellData.getValue().recordIdProperty());
+		item.setCellValueFactory(cellData -> cellData.getValue().itemProperty());
 		location.setCellValueFactory(cellData -> cellData.getValue().locationProperty());
 		dropType.setCellValueFactory(cellData -> cellData.getValue().dropTypeProperty());
 		category.setCellValueFactory(cellData -> cellData.getValue().categoryProperty());
 		ng.setCellValueFactory(cellData -> cellData.getValue().ngProperty().asObject());
 		sellingPrice.setCellValueFactory(cellData -> cellData.getValue().priceProperty().asObject());
 		
-		itemsChanged = new ArrayList<>();
+		recordsChanged = new ArrayList<>();
 		
-		itemTitle.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(itemsChanged)));
-		location.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(itemsChanged)));
-		dropType.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(itemsChanged)));
-		category.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(itemsChanged)));
-		ng.setCellFactory(LimitedTextFieldTableCell.forTableColumn(new RangeTextField(), stringConverter(), getCellEvent(itemsChanged)));
+		item.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(recordsChanged)));
+		location.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(recordsChanged)));
+		dropType.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(recordsChanged)));
+		category.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(recordsChanged)));
+		ng.setCellFactory(LimitedTextFieldTableCell.forTableColumn(new RangeTextField(), stringConverter(), getCellEvent(recordsChanged)));
 		
-		ObservableList<TableColumn<Item, ?>> columns = FXCollections.observableList(Arrays.asList(
-				itemId,
-				itemTitle,
+		ObservableList<TableColumn<Record, ?>> columns = FXCollections.observableList(Arrays.asList(
+				recordId,
+				item,
 				location,
 				dropType,
 				category,
@@ -261,8 +284,27 @@ public class MainController implements Initializable {
 				sellingPrice
 		));
 		
-		itemsTable.getSelectionModel().selectedItemProperty().addListener(rowSelected);
+		recordsTable.getSelectionModel().selectedItemProperty().addListener(rowSelected);
 		
+		makeTable(columns, recordsTable);
+	}
+
+	public void initItemsTable() {
+		itemsTable = new TableView<>();
+		TableColumn<Item, Integer> itemId = new TableColumn<>("Item ID");
+		TableColumn<Item, String> itemTitle = new TableColumn<>("Item");
+
+		itemId.setCellValueFactory(cellData -> cellData.getValue().itemIdProperty().asObject());
+		itemTitle.setCellValueFactory(cellData -> cellData.getValue().itemTitleProperty());
+
+		itemsChanged = new ArrayList<>();
+
+		itemTitle.setCellFactory(LimitedTextFieldTableCell.forTableColumn(getCellEvent(itemsChanged)));
+
+		ObservableList<TableColumn<Item, ?>> columns = FXCollections.observableList(Arrays.asList(itemId, itemTitle));
+
+		itemsTable.getSelectionModel().selectedItemProperty().addListener(rowSelected);
+
 		makeTable(columns, itemsTable);
 	}
 	
@@ -323,7 +365,7 @@ public class MainController implements Initializable {
 		makeTable(columns, categoriesTable);
 	}
 	
-	public <T> void makeTable(ObservableList<TableColumn<T, ?>> columns, TableView<T> table) {
+	public <T extends BaseModel> void makeTable(ObservableList<TableColumn<T, ?>> columns, TableView<T> table) {
 		table.getColumns().addAll(columns);
 		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 		table.setEditable(true);
@@ -352,10 +394,11 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void addRecord() throws IOException, SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
-		NewItemDialog newItemDialog = NewItemDialog.createNewRecordScene(mainStage.getStage());
-		Item newItem = newItemDialog.showAndWait();
-		if (newItem != null) {
-			items.add(newItem);
+		NewRecordDialog newRecordDialog = NewRecordDialog.createNewRecordScene(mainStage.getStage());
+		Record newRecord = newRecordDialog.showAndWait();
+		if (newRecord != null) {
+			records.add(newRecord);
+			setItems();
 			setLocations();
 			setDropTypes();
 			setCategories();
@@ -373,27 +416,34 @@ public class MainController implements Initializable {
 		BaseModel selectedRow = currentTable.getSelectionModel().getSelectedItem();
 		
 		if (modelClass != null) {
-			if (modelClass.isAssignableFrom(Item.class)) {
-			    response = db.deleteItem(Integer.parseInt(((Item)selectedRow).getItemId(), 16));
+			if (modelClass.isAssignableFrom(Record.class)) {
+			    response = db.deleteRecord(Integer.parseInt(((Record)selectedRow).getRecordId(), 16));
 			}
-			
+
+			if (modelClass.isAssignableFrom(Item.class)) {
+				assert selectedRow instanceof Item;
+				response = db.deleteItem(((Item)selectedRow).getItemTitle());
+				setRecords();
+			}
+
 			if (modelClass.isAssignableFrom(Location.class)) {
 				assert selectedRow instanceof Location;
 				response = db.deleteLocation(((Location)selectedRow).getLocationTitle());
-				setItems();
+				setRecords();
 			}
 			
 			if (modelClass.isAssignableFrom(DropType.class)) {
 				assert selectedRow instanceof DropType;
 				response = db.deleteDropType(((DropType)selectedRow).getDropType());
-				setItems();
+				setRecords();
 			}
 			
 			if (modelClass.isAssignableFrom(Category.class)) {
 				assert selectedRow instanceof Category;
 				response = db.deleteCategory(((Category)selectedRow).getCategoryTitle());
-				setItems();
+				setRecords();
 			}
+
 		}
 		
 		if (response) {
@@ -407,55 +457,76 @@ public class MainController implements Initializable {
 		if(showConfirmationAlert("Confirm the deletion of all rows with the selected title")){
 			return;
 		}
-		Item selectedItem = (Item) currentTable.getSelectionModel().getSelectedItem();
-		boolean response = db.deleteItems(selectedItem.getItemTitle());
+		Record selectedRecord = (Record) currentTable.getSelectionModel().getSelectedItem();
+		boolean response = db.deleteRecords(selectedRecord.getItem());
 		if (response) {
-			setItems();
+			setRecords();
 		}
 	}
 	
 	@FXML
-	private void commitChanges() throws SQLException {
+	private void commitChanges() throws SQLException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Record record;
 		Item item;
 		Location location;
 		Category category;
 		DropType dropType;
+
+		ListIterator<Integer> itemsIter = itemsChanged.listIterator();
+		ListIterator<Integer> locationIter = locationsChanged.listIterator();
+		ListIterator<Integer> dropTypesIter = dropTypesChanged.listIterator();
+		ListIterator<Integer> categoriesIter = categoriesChanged.listIterator();
+
 		boolean response;
-		
-		Alert uniqueConstraintError = CustomAlert.Builder()
-				.alertType(Alert.AlertType.ERROR)
-				.title("ERROR")
-				.content("A field with this value already exists! Row: ")
-				.icon()
-				.build();
-		
-		for (int index : itemsChanged) {
-			item = items.get(index);
-			db.editItem(
-				item.getItemId(),
-				item.getItemTitle(),
-				item.getLocation(),
-				item.getDropType(),
-				item.getCategory(),
-				item.getNg()
+
+		Alert uniqueConstraintError = Alerts.getErrorAlert("A field with this value already exists! Row: ");
+
+		for (int index : recordsChanged) {
+			record = records.get(index);
+			db.editRecord(
+					record.getRecordId(),
+					record.getItem(),
+					record.getLocation(),
+					record.getDropType(),
+					record.getCategory(),
+					record.getNg()
 			);
 		}
-		for (int index : locationsChanged) {
+
+		while (itemsIter.hasNext()) {
+			int index = itemsIter.next();
+			item = items.get(index);
+			response = db.editItem(
+					item.getItemId(),
+					item.getItemTitle()
+			);
+
+			if (!response) {
+				uniqueConstraintError.setContentText(uniqueConstraintError.getContentText() + index);
+				uniqueConstraintError.showAndWait();
+			} else {
+				itemsIter.remove();
+			}
+		}
+
+		while (locationIter.hasNext()) {
+			int index = locationIter.next();
 			location = locations.get(index);
 			response = db.editLocation(
 					location.getLocationId(),
 					location.getLocationTitle()
 			);
-			
+
 			if (!response) {
 				uniqueConstraintError.setContentText(uniqueConstraintError.getContentText() + index);
 				uniqueConstraintError.showAndWait();
 			} else {
-				locationsChanged.remove(index);
+				locationIter.remove();
 			}
 		}
 		
-		for (int index : dropTypesChanged) {
+		while (dropTypesIter.hasNext()){
+			int index = dropTypesIter.next();
 			dropType = dropTypes.get(index);
 			response = db.editDropType(
 					dropType.getDropTypeId(),
@@ -466,11 +537,12 @@ public class MainController implements Initializable {
 				uniqueConstraintError.setContentText(uniqueConstraintError.getContentText() + index);
 				uniqueConstraintError.showAndWait();
 			} else {
-				dropTypesChanged.remove(index);
+				dropTypesIter.remove();
 			}
 		}
 		
-		for (int index : categoriesChanged) {
+		while (categoriesIter.hasNext()){
+			int index = categoriesIter.next();
 			category = categories.get(index);
 			response = db.editCategory(
 					category.getCategoryId(),
@@ -481,15 +553,27 @@ public class MainController implements Initializable {
 				uniqueConstraintError.setContentText(uniqueConstraintError.getContentText() + index);
 				uniqueConstraintError.showAndWait();
 			} else {
-				categoriesChanged.remove(index);
+				categoriesIter.remove();
 			}
 		}
-		
+
+		setRecords();
+		setItems();
+		setLocations();
+		setDropTypes();
+		setCategories();
+
 		commitButton.setDisable(true);
+		rollbackButton.setDisable(true);
 	}
 	
 	@FXML
 	private void rollbackChanges() throws SQLException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+		if (!recordsChanged.isEmpty()) {
+			setRecords();
+			recordsChanged.clear();
+		}
+
 		if (!itemsChanged.isEmpty()) {
 			setItems();
 			itemsChanged.clear();
@@ -516,12 +600,19 @@ public class MainController implements Initializable {
 	}
 	
 	@FXML
-	private void truncateCurrentTable() throws SQLException {
+	private void truncateCurrentTable() throws SQLException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		if(showConfirmationAlert("Confirm truncating the current table")){
 			return;
 		}
 		
 		if (!currentDataset.isEmpty()) {
+			if (currentTableClass.isAssignableFrom(Record.class)) {
+				if (db.truncateRecords()) {
+					records.clear();
+					recordsChanged.clear();
+				}
+			}
+
 			if (currentTableClass.isAssignableFrom(Item.class)) {
 				if (db.truncateItems()) {
 					items.clear();
@@ -544,11 +635,13 @@ public class MainController implements Initializable {
 			}
 			
 			if (currentTableClass.isAssignableFrom(Category.class)) {
-				if (db.truncateDropTypes()) {
+				if (db.truncateCategories()) {
 					categories.clear();
 					categoriesChanged.clear();
 				}
 			}
+
+			setRecords();
 			truncateButton.setDisable(true);
 		}
 	}
@@ -561,11 +654,13 @@ public class MainController implements Initializable {
 		
 		if (db.truncateAll()) {
 			
+			records.clear();
 			items.clear();
 			locations.clear();
 			dropTypes.clear();
 			categories.clear();
 			
+			recordsChanged.clear();
 			itemsChanged.clear();
 			locationsChanged.clear();
 			dropTypesChanged.clear();
@@ -578,22 +673,17 @@ public class MainController implements Initializable {
 	
 	@FXML
 	private void findItems() throws InvocationTargetException, SQLException, InstantiationException, NoSuchMethodException, IllegalAccessException {
-		Alert notFoundWarning = CustomAlert.Builder()
-				.alertType(Alert.AlertType.WARNING)
-				.title("WARNING")
-				.content("Items with the specified filters not found")
-				.icon()
-				.build();
+		Alert notFoundWarning = Alerts.getWarningAlert("Records with the specified filters not found");
 		
-		itemsSearch = FXCollections.observableList(db.findItems(
+		recordsSearches = FXCollections.observableList(db.findRecords(
 				searchArea.getText(),
 				getFilterValue(locationFilter),
 				getFilterValue(dropTypeFilter),
 				getFilterValue(categoryFilter)
 		));
 		
-		if (!itemsSearch.isEmpty()) {
-			itemsTable.setItems(itemsSearch);
+		if (!recordsSearches.isEmpty()) {
+			recordsTable.setItems(recordsSearches);
 		} else {
 			notFoundWarning.showAndWait();
 		}
@@ -612,7 +702,7 @@ public class MainController implements Initializable {
 	
 	private final InvalidationListener rowSelected = (selection) -> {
 		if (currentTable.getSelectionModel().getSelectedItems().size() != 0) {
-			if (currentTable.getSelectionModel().getSelectedItem().getClass().isAssignableFrom(Item.class)) {
+			if (currentTable.getSelectionModel().getSelectedItem().getClass().isAssignableFrom(Record.class)) {
 				removeAllButton.setDisable(false);
 			}
 			deleteRecordButton.setDisable(false);
@@ -629,8 +719,10 @@ public class MainController implements Initializable {
 				if (!changedIndices.contains(changedRow)) {
 					changedIndices.add(changedRow);
 				}
-				if (commitButton.isDisabled() && rollbackButton.isDisabled()) {
+				if (commitButton.isDisabled()) {
 					commitButton.setDisable(false);
+				}
+				if (rollbackButton.isDisabled()) {
 					rollbackButton.setDisable(false);
 				}
 			}
@@ -653,14 +745,7 @@ public class MainController implements Initializable {
 	}
 	
 	private boolean showConfirmationAlert(String content) {
-		Alert alert = CustomAlert.Builder()
-				.alertType(Alert.AlertType.CONFIRMATION)
-				.title("CONFIRMATION")
-				.content(content)
-				.icon()
-				.build();
-		Optional<ButtonType> response = alert.showAndWait();
-		
+		Optional<ButtonType> response = Alerts.getConfirmationAlert(content).showAndWait();
 		return response.get() != ButtonType.OK;
 	}
 }

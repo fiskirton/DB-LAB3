@@ -24,6 +24,8 @@ public class MainStage {
 		});
 		Scene mainScene = new Scene(root);
 		mainStage.setScene(mainScene);
+		mainStage.setTitle("DS1 ARMORY");
+		mainStage.setResizable(false);
 		controller = loader.getController();
 		controller.setMainStage(this);
 	}
