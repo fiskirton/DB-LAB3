@@ -39,14 +39,11 @@ $body$
             base_price int,
             ng int not null check (ng > 0 and ng <= 5) default 1,
             ng_price int,
-            primary key (item, base_price),
             foreign key (item) references items (item_id) on delete cascade on update cascade ,
             foreign key (location) references locations (location_id) on delete cascade on update cascade,
             foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,
             foreign key (category) references categories(category_id) on delete cascade on update cascade
         );
-
-        create unique index if not exists item_price_idx on records(item, base_price);
 
         create or replace function set_ng_price()
         returns trigger as
@@ -57,13 +54,30 @@ $body$
             end;
         $$ language plpgsql;
 
+        create or replace function set_record_idx()
+        returns trigger as
+        $$
+            begin
+                new.record_id = to_hex(new.item + new.location + new.drop_type + new.category * new.ng);
+                return new;
+            end;
+        $$ language plpgsql;
+
         drop trigger if exists ng_price_trigger on records;
 
         create trigger ng_price_trigger
         before insert or update on records
         for row execute procedure set_ng_price();
+
+        drop trigger if exists records_idx_trigger on records;
+
+        create trigger records_idx_trigger
+            before insert or update on records
+            for row execute procedure set_record_idx();
     end;
 $body$ language plpgsql;
+
+select init_db();
 
 create or replace function get_records ()
 returns table (
@@ -87,14 +101,15 @@ $body$
     end;
 $body$ language plpgsql;
 
-create or replace function add_record(id int, title text, loc text, dt text, categ text, bp int, ng_val int)
-returns bool as
+create or replace function add_record(title text, loc text, dt text, categ text, bp int, ng_val int)
+returns text as
 $body$
     declare
             i_id int;
             l_id int;
             dt_id int;
             c_id int;
+            rec_id text;
     begin
 
         if not exists(select item_title from items where lower(item_title) = lower(title))
@@ -123,13 +138,19 @@ $body$
         select category_id into c_id from categories where category_title = initcap(categ);
 
         insert into records (record_id, item, location, drop_type, category, base_price, ng)
-        values (to_hex(id), i_id, l_id, dt_id, c_id, bp, ng_val);
-        return true;
+        values ('', i_id, l_id, dt_id, c_id, bp, ng_val);
+
+        select record_id into rec_id from records where record_id = to_hex(i_id + l_id + dt_id + c_id * ng_val);
+        return rec_id;
+
         exception
-         when unique_violation then
-             return false;
+            when unique_violation then
+                return 'error';
+
     end;
 $body$ language plpgsql;
+
+select record_id from records where record_id = to_hex(1 + 1 + 1 + 1 * 1);
 
 create or replace function edit_record(id text, title text, loc text, dt text, categ text, ng_val int)
 returns bool as
@@ -367,7 +388,7 @@ $$
     end;
 $$ language plpgsql;
 
-create or replace function get_record_by_id(rec_id int)
+create or replace function get_record_by_id(rec_id text)
 returns table (
     id text,
     title text,
@@ -386,7 +407,7 @@ $$
             inner join locations l on r.location = l.location_id
             inner join drop_types dt on r.drop_type = dt.drop_type_id
             inner join categories c on r.category = c.category_id
-            where r.record_id = to_hex(rec_id);
+            where r.record_id = rec_id;
     end;
 $$ language plpgsql;
 

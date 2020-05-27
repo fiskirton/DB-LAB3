@@ -135,33 +135,32 @@ public enum DB {
 		return getData(Category.class, "{call get_categories}");
 	}
 	
-	public boolean addRecord(int id, String item, String location, String dropType, String category, int basePrice, int ng) throws SQLException {
+	public String addRecord(String item, String location, String dropType, String category, int basePrice, int ng) throws SQLException {
 		main_connection = openConnection(MAIN_DB_URL);
-		CallableStatement addRecordStatment = main_connection.prepareCall("{? = call add_record(?,?,?,?,?,?,?)}");
+		CallableStatement addRecordStatment = main_connection.prepareCall("{? = call add_record(?,?,?,?,?,?)}");
 		
-		addRecordStatment.registerOutParameter(1, Types.BOOLEAN);
-		addRecordStatment.setInt(2, id);
-		addRecordStatment.setString(3, item);
-		addRecordStatment.setString(4, location);
-		addRecordStatment.setString(5, dropType);
-		addRecordStatment.setString(6, category);
-		addRecordStatment.setInt(7, basePrice);
-		addRecordStatment.setInt(8, ng);
+		addRecordStatment.registerOutParameter(1, Types.VARCHAR);
+		addRecordStatment.setString(2, item);
+		addRecordStatment.setString(3, location);
+		addRecordStatment.setString(4, dropType);
+		addRecordStatment.setString(5, category);
+		addRecordStatment.setInt(6, basePrice);
+		addRecordStatment.setInt(7, ng);
 		
 		try {
 			addRecordStatment.executeUpdate();
 		} catch (SQLException ex) {
-			return false;
+			return "error";
 		}
 		
 		closeConnection(main_connection);
-		return addRecordStatment.getBoolean(1);
+		return addRecordStatment.getString(1);
 	}
 	
-	public Record getRecordById(int id) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+	public Record getRecordById(String id) throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 		main_connection = openConnection(MAIN_DB_URL);
 		CallableStatement getRecordByIdStatement = main_connection.prepareCall("{call get_record_by_id(?)}");
-		getRecordByIdStatement.setInt(1, id);
+		getRecordByIdStatement.setString(1, id);
 		ResultSet rs = getRecordByIdStatement.executeQuery();
 		rs.next();
 		int columnsNum = rs.getMetaData().getColumnCount();

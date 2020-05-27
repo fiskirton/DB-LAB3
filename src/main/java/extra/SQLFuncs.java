@@ -107,8 +107,6 @@ public class SQLFuncs {
 			"            foreign key (drop_type) references drop_types(drop_type_id) on delete cascade on update cascade,\n" +
 			"            foreign key (category) references categories(category_id) on delete cascade on update cascade\n" +
 			"        );\n" +
-
-			"        create unique index if not exists item_price_idx on records(item, location, drop_type, category);\n" +
 			"\n" +
 			"        create or replace function set_ng_price()\n" +
 			"        returns trigger as\n" +
@@ -119,13 +117,30 @@ public class SQLFuncs {
 			"            end;\n" +
 			"        $$ language plpgsql;\n" +
 			"\n" +
+			"        create or replace function set_record_idx()\n" +
+			"        returns trigger as\n" +
+			"        $$\n" +
+			"            begin\n" +
+			"                new.record_id = to_hex(new.item + new.location + new.drop_type + new.category * new.ng);\n" +
+			"                return new;\n" +
+			"            end;\n" +
+			"        $$ language plpgsql;\n" +
+			"\n" +
 			"        drop trigger if exists ng_price_trigger on records;\n" +
 			"\n" +
 			"        create trigger ng_price_trigger\n" +
 			"        before insert or update on records\n" +
 			"        for row execute procedure set_ng_price();\n" +
+			"\n" +
+			"        drop trigger if exists records_idx_trigger on records;\n" +
+			"\n" +
+			"        create trigger records_idx_trigger\n" +
+			"            before insert or update on records\n" +
+			"            for row execute procedure set_record_idx();\n" +
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
+			"\n" +
+			"select init_db();\n" +
 			"\n" +
 			"create or replace function get_records ()\n" +
 			"returns table (\n" +
@@ -149,14 +164,15 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function add_record(id int, title text, loc text, dt text, categ text, bp int, ng_val int)\n" +
-			"returns bool as\n" +
+			"create or replace function add_record(title text, loc text, dt text, categ text, bp int, ng_val int)\n" +
+			"returns text as\n" +
 			"$body$\n" +
 			"    declare\n" +
 			"            i_id int;\n" +
 			"            l_id int;\n" +
 			"            dt_id int;\n" +
 			"            c_id int;\n" +
+			"            rec_id text;\n" +
 			"    begin\n" +
 			"\n" +
 			"        if not exists(select item_title from items where lower(item_title) = lower(title))\n" +
@@ -185,13 +201,19 @@ public class SQLFuncs {
 			"        select category_id into c_id from categories where category_title = initcap(categ);\n" +
 			"\n" +
 			"        insert into records (record_id, item, location, drop_type, category, base_price, ng)\n" +
-			"        values (to_hex(id), i_id, l_id, dt_id, c_id, bp, ng_val);\n" +
-			"        return true;\n" +
+			"        values ('', i_id, l_id, dt_id, c_id, bp, ng_val);\n" +
+			"\n" +
+			"        select record_id into rec_id from records where record_id = to_hex(i_id + l_id + dt_id + c_id * ng_val);\n" +
+			"        return rec_id;\n" +
+			"\n" +
 			"        exception\n" +
-			"         when unique_violation then\n" +
-			"             return false;\n" +
+			"            when unique_violation then\n" +
+			"                return 'error';\n" +
+			"\n" +
 			"    end;\n" +
 			"$body$ language plpgsql;\n" +
+			"\n" +
+			"select record_id from records where record_id = to_hex(1 + 1 + 1 + 1 * 1);\n" +
 			"\n" +
 			"create or replace function edit_record(id text, title text, loc text, dt text, categ text, ng_val int)\n" +
 			"returns bool as\n" +
@@ -429,7 +451,7 @@ public class SQLFuncs {
 			"    end;\n" +
 			"$$ language plpgsql;\n" +
 			"\n" +
-			"create or replace function get_record_by_id(rec_id int)\n" +
+			"create or replace function get_record_by_id(rec_id text)\n" +
 			"returns table (\n" +
 			"    id text,\n" +
 			"    title text,\n" +
@@ -448,9 +470,9 @@ public class SQLFuncs {
 			"            inner join locations l on r.location = l.location_id\n" +
 			"            inner join drop_types dt on r.drop_type = dt.drop_type_id\n" +
 			"            inner join categories c on r.category = c.category_id\n" +
-			"            where r.record_id = to_hex(rec_id);\n" +
+			"            where r.record_id = rec_id;\n" +
 			"    end;\n" +
-			"$$ language plpgsql;\n" +
+			"$$ language plpgsql;" +
 			"\n" +
 			"create or replace function delete_record(id int)\n" +
 			"returns bool as\n" +

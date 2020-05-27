@@ -56,20 +56,21 @@ public class NewRecordController implements Initializable {
 			}
 		}
 
+		String response = db.addRecord(
+				data[0],
+				data[1],
+				data[2],
+				data[3],
+				Integer.parseInt(data[4]),
+				Integer.parseInt(data[5])
+		);
+
 		try {
-			if (db.addRecord(
-					Integer.parseInt(data[0]),
-					data[1],
-					data[2],
-					data[3],
-					data[4],
-					Integer.parseInt(data[5]),
-					Integer.parseInt(data[6])
-			)) {
-				newRecord = db.getRecordById(Integer.parseInt(data[0]));
+			if (!response.equals("error")) {
+				newRecord = db.getRecordById(response);
 				stage.hide();
 			} else {
-				Alerts.getWarningAlert("Record with given ID already exists\n or combination of fields is not unique").showAndWait();
+				Alerts.getWarningAlert("Such record already exists").showAndWait();
 				newRecord = null;
 			}
 		} catch (NumberFormatException exception) {
@@ -80,7 +81,7 @@ public class NewRecordController implements Initializable {
 	public Record getResult() {
 		return newRecord;
 	}
-	
+
 	public void setStage(Stage stage) {
 		this.stage = stage;
 	}
